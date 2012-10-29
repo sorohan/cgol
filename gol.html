@@ -7,44 +7,68 @@
     left:10px;
     top:10px;
 }
+body {
+    overflow:hidden;
+}
 </style>
 <script>
 
+    /**
+     * TODO: 
+     *  - Controls on screen.
+     *  - Kill off cells that are really far away - in case they go walkabout forever.
+     *  - (or) Add ability to wrap around the render container.
+     */
+
     function init()
     {
-        var cgol = new CGOL(document.getElementById('board'));
+        // var cgol = new CGOL(document.getElementById('board'));
+        var cgol = new CGOL(document.body);
         return cgol;
     }
 
     CGOL = function(renderTo)
     {
         this.renderTo = renderTo;
+
         this.init();
     };
     CGOL.prototype = {
         board : null,
-        width : 20,
-        height : 20,
-        viewX : 10,
+
+        // starting vars
+        startWith : 50,
+
+        // viewing vars (zoom/pan)
+        cellSize : 10,
+        viewX : 0,
         viewY : 0,
+        speed : 20, // internal in milliseconds
 
         init : function()
         {
             this.board = { };
-            // do 10%(ish) of the board
-            var doPc = (this.width*this.height*0.1);
-            for (var i=0; i<doPc; i++) {
-                this.randon();
+            
+            /* test shape
+            this.getCell(25,2).switchOn();
+            this.getCell(25,3).switchOn();
+            this.getCell(25,4).switchOn();
+            this.render();
+            return;
+            */
+
+            for (var i=0; i<this.startWith; i++) {
+                this.randomInit();
             }
             this.render();
+            this.start();
         },
 
-        randon : function()
+        randomInit : function()
         {
-            // Cluster to half + 10.
-            var randX = Math.floor(Math.random()*(Math.floor(this.width/2)+1))+10;
-            var randX = Math.floor(Math.random()*(Math.floor(this.height/2)+1))+10;
-            var randY = Math.floor(Math.random()*11)+10;
+            // Cluster to top left.
+            var randX = Math.floor(Math.random()*(10+1))+10;
+            var randY = Math.floor(Math.random()*(10+1))+10;
             var cell = this.getCell(randX, randY);
             cell.switchOn();
         },
@@ -63,39 +87,83 @@
             return this.board[x][y];
         },
 
+        start : function()
+        {
+            var cgol = this;
+            this._stepInterval = window.setInterval(function() { cgol.step(); }, cgol._speed);
+        },
+
+        pause : function()
+        {
+            window.clearInterval(this._stepInterval);
+        },
+
+        reset : function()
+        {
+            this.pause();
+            this.destroy();
+            this.init();
+        },
+
+        setSpeed : function(speed)
+        {
+            this._speed = speed;
+            this.pause();
+            this.start();
+        },
+
         step : function()
         {
             // Loop through all the cells in the board && pre-step.
-            for (var i=this.viewX; i<this.width; i++) {
-                for (var j=this.viewY; j<this.height; j++) {
-            /*for (var i in this.board) {
-                if (this.board.hasOwnProperty(i)) {*/
-                    /*for (j in this.board[i]) {
-                        if (this.board[i].hasOwnProperty(j)) {*/
+            var blanksChecked = [];
+            var stepCount = 0;
+            for (var i in this.board) {
+                if (this.board.hasOwnProperty(i)) {
+                    for (j in this.board[i]) {
+                        if (this.board[i].hasOwnProperty(j)) {
                             var cell = this.getCell(i,j);
                             cell.prestep();
-                            /*
+                            stepCount++;
+                            if (cell.isOn()) {
+                                // Better check the neighbours.
+                                this._stepNeighbours(cell, blanksChecked);
+                                stepCount++;
+                            }
                         }
                     }
-                    */
                 }
             }
             // Do the step to the next gen.
-            for (var i=this.viewX; i<this.width; i++) {
-                for (var j=this.viewY; j<this.height; j++) {
-            /*for (var i in this.board) {
-                if (this.board.hasOwnProperty(i)) {*/
-                    /*for (j in this.board[i]) {
-                        if (this.board[i].hasOwnProperty(j)) {*/
+            for (var i in this.board) {
+                if (this.board.hasOwnProperty(i)) {
+                    for (j in this.board[i]) {
+                        if (this.board[i].hasOwnProperty(j)) {
                             var cell = this.getCell(i,j);
                             cell.dostep();
-                            /*
                         }
                     }
-                    */
                 }
             }
+            // console.log(stepCount);
             this.render();
+        },
+
+        _stepNeighbours : function(cell, ignore)
+        {
+            for (var i=cell.myX-1; i<=cell.myX+1; i++) {
+                for (var j=cell.myY-1; j<=cell.myY+1; j++) {
+                    if (i!==cell.myX || j!==cell.myY) {
+                        var id = i+','+j;
+                        if (-1===ignore.indexOf(id)) {
+                            var neighbourCell = this.getCell(i,j);
+                            if (!(neighbourCell.isOn())) {
+                                neighbourCell.prestep();
+                            }
+                            ignore.push(id);
+                        }
+                    }
+                }
+            }
         },
 
         destroyCell : function(x,y)
@@ -117,10 +185,46 @@
 
         render : function()
         {
+            this.width =  Math.ceil(this.renderTo.scrollWidth/this.cellSize);
+            this.height = Math.ceil(this.renderTo.scrollHeight/this.cellSize);
+            
             for (var i=this.viewX; i<(this.viewX+this.width); i++) {
                 for (var j=this.viewY; j<this.height; j++) {
                     var cell = this.getCell(i,j);
-                    this.renderTo.appendChild(cell.render());
+                    var renderDiv = cell.render();
+                    if (renderDiv) {
+                        this.renderTo.appendChild(renderDiv);
+                    }
+                }
+            }
+        },
+
+        zoom : function(zoomBy)
+        {
+            this.cellSize += zoomBy;
+        },
+
+        panX : function(panBy)
+        {
+            this.viewX += panBy;
+        },
+
+        panY : function(panBy)
+        {
+            this.viewY += panBy;
+        },
+
+        destroy : function()
+        {
+            // Loop through all the cells in the board and kill them.
+            for (var i in this.board) {
+                if (this.board.hasOwnProperty(i)) {
+                    for (j in this.board[i]) {
+                        if (this.board[i].hasOwnProperty(j)) {
+                            var cell = this.getCell(i,j);
+                            cell.destroy();
+                        }
+                    }
                 }
             }
         }
@@ -132,12 +236,10 @@
         this.myX = myX;
         this.myY = myY;
         this._isOn = (isOn!==undefined && isOn) ? true : false;
-        this._wasOn = null;
+        this._wasOn = null; // store last generation.
         this._div = null;
     };
     CGOL.Cell.prototype = {
-
-        size : 20,
 
         isOn : function()
         {
@@ -162,7 +264,10 @@
 
         destroy : function()
         {
-            /*this.game.destroyCell(this.myX, this.myY);*/
+            if (undefined!==this._div && null!==this._div) {
+                this._div.parentNode.removeChild(this._div);
+            }
+            this.game.destroyCell(this.myX, this.myY);
         },
 
         numNeighbours : function()
@@ -202,6 +307,7 @@
 
         dostep : function()
         {
+            this._wasOn = this._isOn;
             if (this._preStepIsOn) {
                 this.switchOn();
             }
@@ -212,12 +318,17 @@
 
         render : function()
         {
+            if (!this._isOn) {
+                this.destroy();
+                return;
+            }
+
             if (undefined===this._div || null===this._div) {
                 this._div = document.createElement('div');
             }
             var div = this._div;
-            div.style.width =  (this.size-2) + 'px';
-            div.style.height = (this.size-2) + 'px';
+            div.style.width =  (this.game.cellSize-2) + 'px';
+            div.style.height = (this.game.cellSize-2) + 'px';
             if (this.isOn()) {
                 div.style.border = '1px solid #7777ee';
                 div.style.backgroundColor = '#9999f0';
@@ -229,8 +340,8 @@
             div.style.position="absolute";
             div.style.margin="0px";
             div.style.padding="0px";
-            div.style.left = (this.myX-this.game.viewX) * this.size;
-            div.style.top = (this.myY-this.game.viewY) * this.size;
+            div.style.left = (this.myX-this.game.viewX) * this.game.cellSize;
+            div.style.top = (this.myY-this.game.viewY) * this.game.cellSize;
             // div.innerHTML = this.myX+','+this.myY;
             return div;
         }
@@ -263,8 +374,6 @@
 
 <script>
     cgol = init();
-    // document.getElementById('board').onclick = function() { cgol.step(); };
-    setInterval(function() { cgol.step(); }, 250);
 </script>
 </body>
 </html>
