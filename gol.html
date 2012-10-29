@@ -1,0 +1,265 @@
+<html>
+<head>
+<style type="text/css">
+#board {
+    width:500px;
+    height:500px;
+    border:1px solid #ccc;
+    font-size:9px;
+}
+</style>
+<script>
+
+    function init()
+    {
+        var cgol = new CGOL(document.getElementById('board'));
+        return cgol;
+    }
+
+    CGOL = function(renderTo)
+    {
+        this.renderTo = renderTo;
+        this.init();
+    };
+    CGOL.prototype = {
+        board : null,
+
+        init : function()
+        {
+            this.board = { };
+            for (var i=0; i<40; i++) {
+                this.randon();
+            }
+            this.render();
+        },
+
+        randon : function()
+        {
+            var randX = Math.floor(Math.random()*11)+10;
+            var randY = Math.floor(Math.random()*11)+10;
+            var cell = this.getCell(randX, randY);
+            cell.switchOn();
+        },
+
+        getCell : function(x,y)
+        {
+            if (undefined===this.board[x] || undefined===this.board[x][y]) {
+                if (undefined===this.board[x]) {
+                    this.board[x] = {};
+                }
+                if (undefined===this.board[x][y]) {
+                    var me = this;
+                    this.board[x][y] = new CGOL.Cell(me, x, y);
+                }
+            }
+            return this.board[x][y];
+        },
+
+        step : function()
+        {
+            // Loop through all the cells in the board && pre-step.
+            for (var i=0; i<50; i++) {
+                for (var j=0; j<50; j++) {
+            /*for (var i in this.board) {
+                if (this.board.hasOwnProperty(i)) {*/
+                    /*for (j in this.board[i]) {
+                        if (this.board[i].hasOwnProperty(j)) {*/
+                            var cell = this.getCell(i,j);
+                            cell.prestep();
+                            /*
+                        }
+                    }
+                    */
+                }
+            }
+            // Do the step to the next gen.
+            for (var i=0; i<50; i++) {
+                for (var j=0; j<50; j++) {
+            /*for (var i in this.board) {
+                if (this.board.hasOwnProperty(i)) {*/
+                    /*for (j in this.board[i]) {
+                        if (this.board[i].hasOwnProperty(j)) {*/
+                            var cell = this.getCell(i,j);
+                            cell.dostep();
+                            /*
+                        }
+                    }
+                    */
+                }
+            }
+            this.render();
+        },
+
+        destroyCell : function(x,y)
+        {
+            if (undefined !== this.board[x] && undefined !== this.board[x][y]) {
+                delete this.board[x][y];
+                var isEmpty = true;
+                for (var i in this.board[x]) {
+                    if (this.board[x].hasOwnProperty(i)) {
+                        isEmpty = false;
+                        break;
+                    }
+                }
+                if (isEmpty) {
+                    delete this.board[x];
+                }
+            }
+        },
+
+        render : function()
+        {
+            this.renderTo.innerHTML = '';
+            for (var i=0; i<50; i++) {
+                for (var j=0; j<50; j++) {
+                    var cell = this.getCell(i,j);
+                    this.renderTo.appendChild(cell.render());
+                }
+                this.renderTo.appendChild(this._renderBreak());
+            }
+        },
+
+        _renderBreak : function()
+        {
+            var br = document.createElement('div');
+            br.style.clear = 'both';
+            br.style.height = '0px';
+            return br;
+        }
+    };
+
+    CGOL.Cell = function(game, myX, myY, isOn)
+    {
+        this.game = game;
+        this.myX = myX;
+        this.myY = myY;
+        this._isOn = (isOn!==undefined && isOn) ? true : false;
+        this._wasOn = null;
+        this._div = null;
+    };
+    CGOL.Cell.prototype = {
+        isOn : function()
+        {
+            return this._isOn;
+        },
+
+        wasOn : function()
+        {
+            return this._wasOn;
+        },
+
+        switchOn : function()
+        {
+            this._isOn = true;
+        },
+
+        switchOff : function()
+        {
+            this._isOn = false;
+            this.destroy();
+        },
+
+        destroy : function()
+        {
+            /*this.game.destroyCell(this.myX, this.myY);*/
+        },
+
+        numNeighbours : function()
+        {
+            var numNeighbours = 0;
+            for (var i=this.myX-1; i<=this.myX+1; i++) {
+                for (var j=this.myY-1; j<=this.myY+1; j++) {
+                    if (i!==this.myX || j!==this.myY) {
+                        var neighbour = this.game.getCell(i,j);
+                        if (neighbour.isOn()) {
+                            numNeighbours++;
+                        }
+                    }
+                }
+            }
+            return numNeighbours;
+        },
+
+        prestep : function()
+        {
+            var numNeighbours = this.numNeighbours();
+            var toLive = false;
+            if (this._isOn && (numNeighbours < 2)) {
+                toLive = false;
+            }
+            else if (this._isOn && (numNeighbours === 2 || numNeighbours === 3)) {
+                toLive = true;
+            }
+            else if (this._isOn && (numNeighbours > 3)) {
+                toLive = false;
+            }
+            else if (!this._isOn && (numNeighbours === 3)) {
+                toLive = true;
+            }
+            this._preStepIsOn = toLive;
+        },
+
+        dostep : function()
+        {
+            if (this._preStepIsOn) {
+                this.switchOn();
+            }
+            else {
+                this.switchOff();
+            }
+        },
+
+        render : function()
+        {
+            if (undefined===this._div || null===this._div) {
+                this._div = document.createElement('div');
+            }
+            var div = this._div;
+            div.style.width = '8px';
+            div.style.height = '8px';
+            if (this.isOn()) {
+                div.style.border = '1px solid #7777ee';
+            }
+            else {
+                div.style.border = '1px solid #eee';
+            }
+            div.style.cssFloat = 'left';
+            div.style.margin="0px";
+            div.style.padding="0px";
+            // div.innerHTML = this.myX+','+this.myY;
+            return div;
+        }
+    };
+
+    if (!Array.prototype.indexOf) {
+        Array.prototype.indexOf = function(elt /*, from*/)
+        {
+            var len = this.length >>> 0;
+
+            var from = Number(arguments[1]) || 0;
+            from = (from < 0)
+                 ? Math.ceil(from)
+                 : Math.floor(from);
+            if (from < 0)
+              from += len;
+
+            for (; from < len; from++) {
+                if (from in this &&
+                        this[from] === elt)
+                return from;
+            }
+            return -1;
+        };
+    }
+</script>
+</head>
+<body>
+<div id="board"></div>
+
+<script>
+    cgol = init();
+    // document.getElementById('board').onclick = function() { cgol.step(); };
+    setInterval(function() { cgol.step(); }, 1000);
+</script>
+</body>
+</html>
