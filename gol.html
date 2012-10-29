@@ -38,13 +38,13 @@ body {
         board : null,
 
         // starting vars
-        startWith : 50,
+        startWith : 150,
 
         // viewing vars (zoom/pan)
         cellSize : 10,
         viewX : 0,
         viewY : 0,
-        speed : 20, // internal in milliseconds
+        _speed : 100, // initial speed, in milliseconds
 
         init : function()
         {
@@ -68,8 +68,8 @@ body {
         randomInit : function()
         {
             // Cluster to top left.
-            var randX = Math.floor(Math.random()*(10+1))+10;
-            var randY = Math.floor(Math.random()*(10+1))+10;
+            var randX = Math.floor(Math.random()*(30+1))+10;
+            var randY = Math.floor(Math.random()*(30+1))+10;
             var cell = this.getCell(randX, randY);
             cell.switchOn();
         },
@@ -331,8 +331,8 @@ body {
             div.style.width =  (this.game.cellSize-2) + 'px';
             div.style.height = (this.game.cellSize-2) + 'px';
             if (this.isOn()) {
-                div.style.border = '1px solid #7777ee';
-                div.style.backgroundColor = '#9999f0';
+                div.style.border = '1px solid #d2e2ff';
+                div.style.backgroundColor = '#e3edff';
             }
             else {
                 div.style.border = '1px solid #eee';
