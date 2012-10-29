@@ -2,10 +2,10 @@
 <head>
 <style type="text/css">
 #board {
-    width:500px;
-    height:500px;
-    border:1px solid #ccc;
     font-size:9px;
+    position:relative;
+    left:10px;
+    top:10px;
 }
 </style>
 <script>
@@ -23,11 +23,17 @@
     };
     CGOL.prototype = {
         board : null,
+        width : 20,
+        height : 20,
+        viewX : 10,
+        viewY : 0,
 
         init : function()
         {
             this.board = { };
-            for (var i=0; i<40; i++) {
+            // do 10%(ish) of the board
+            var doPc = (this.width*this.height*0.1);
+            for (var i=0; i<doPc; i++) {
                 this.randon();
             }
             this.render();
@@ -35,7 +41,9 @@
 
         randon : function()
         {
-            var randX = Math.floor(Math.random()*11)+10;
+            // Cluster to half + 10.
+            var randX = Math.floor(Math.random()*(Math.floor(this.width/2)+1))+10;
+            var randX = Math.floor(Math.random()*(Math.floor(this.height/2)+1))+10;
             var randY = Math.floor(Math.random()*11)+10;
             var cell = this.getCell(randX, randY);
             cell.switchOn();
@@ -58,8 +66,8 @@
         step : function()
         {
             // Loop through all the cells in the board && pre-step.
-            for (var i=0; i<50; i++) {
-                for (var j=0; j<50; j++) {
+            for (var i=this.viewX; i<this.width; i++) {
+                for (var j=this.viewY; j<this.height; j++) {
             /*for (var i in this.board) {
                 if (this.board.hasOwnProperty(i)) {*/
                     /*for (j in this.board[i]) {
@@ -73,8 +81,8 @@
                 }
             }
             // Do the step to the next gen.
-            for (var i=0; i<50; i++) {
-                for (var j=0; j<50; j++) {
+            for (var i=this.viewX; i<this.width; i++) {
+                for (var j=this.viewY; j<this.height; j++) {
             /*for (var i in this.board) {
                 if (this.board.hasOwnProperty(i)) {*/
                     /*for (j in this.board[i]) {
@@ -109,22 +117,12 @@
 
         render : function()
         {
-            this.renderTo.innerHTML = '';
-            for (var i=0; i<50; i++) {
-                for (var j=0; j<50; j++) {
+            for (var i=this.viewX; i<(this.viewX+this.width); i++) {
+                for (var j=this.viewY; j<this.height; j++) {
                     var cell = this.getCell(i,j);
                     this.renderTo.appendChild(cell.render());
                 }
-                this.renderTo.appendChild(this._renderBreak());
             }
-        },
-
-        _renderBreak : function()
-        {
-            var br = document.createElement('div');
-            br.style.clear = 'both';
-            br.style.height = '0px';
-            return br;
         }
     };
 
@@ -138,6 +136,9 @@
         this._div = null;
     };
     CGOL.Cell.prototype = {
+
+        size : 20,
+
         isOn : function()
         {
             return this._isOn;
@@ -215,17 +216,21 @@
                 this._div = document.createElement('div');
             }
             var div = this._div;
-            div.style.width = '8px';
-            div.style.height = '8px';
+            div.style.width =  (this.size-2) + 'px';
+            div.style.height = (this.size-2) + 'px';
             if (this.isOn()) {
                 div.style.border = '1px solid #7777ee';
+                div.style.backgroundColor = '#9999f0';
             }
             else {
                 div.style.border = '1px solid #eee';
+                div.style.backgroundColor = '#fff';
             }
-            div.style.cssFloat = 'left';
+            div.style.position="absolute";
             div.style.margin="0px";
             div.style.padding="0px";
+            div.style.left = (this.myX-this.game.viewX) * this.size;
+            div.style.top = (this.myY-this.game.viewY) * this.size;
             // div.innerHTML = this.myX+','+this.myY;
             return div;
         }
@@ -259,7 +264,7 @@
 <script>
     cgol = init();
     // document.getElementById('board').onclick = function() { cgol.step(); };
-    setInterval(function() { cgol.step(); }, 1000);
+    setInterval(function() { cgol.step(); }, 250);
 </script>
 </body>
 </html>
