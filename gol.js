@@ -286,11 +286,6 @@ CGOL.Block.prototype = {
             xY = parseInt(neighbourPos[1],10),
             x  = parseInt(shiftXY[0],10),
             y  = parseInt(shiftXY[1],10);
-        /*
-        modAlgorithm = document.getElementById('mod').value;
-        modAlgorithm = modAlgorithm.replace(/w/g, 'this.width');
-        eval(modAlgorithm);
-        */
         if ((block===this) || (xN==0 && yN!=0 && (x!=0 || y!=0))) {
             mod = (this.width*y)+(x);
         }
@@ -298,7 +293,6 @@ CGOL.Block.prototype = {
             mod = ((-1*x) + y) * this.width + x
         }
         return mod;
-
     },
 
     /**
@@ -376,66 +370,6 @@ CGOL.Block.prototype = {
         return this.neighbours[x+':'+y];
     },
         
-    /*
-    [ 0, 1, 2, 3
-      4, 5, 6, 7
-      8, 9, 10,11
-      12,13,14,15 ]
-
-     1000000000000000
-     -1,-1, -1,-1
-     0000000000000001 (15) (flip)
-     0,-1, 0,-1
-     0000000000001000 (12) (solution: shift -4 (-width)
-     0,-1, -1,1
-     0000000000000100 (13) (solution: shift -3 (-(width+1)
-     -1,0, -1,1
-     0001000000000000 (3) (solution: shift right 3) (width-1)
-     0,0
-     1000000000000000 (0)
-     0,0, 0, 1
-     0100000000000000 (1) (solution: shift right 1 (x)
-     -1,0, -1,1
-     0000000100000000 (7) (solution: shift right 7 (width*2)-1
-     0,0, 0,1
-     0000100000000000 (4) (solution: shift right 4 (width)
-     0,0, 1,1
-     0000010000000000 (5) (solution: shift right 5 (width+1)
-
-     0 = 15
-     0 = 12
-     0 = 13
-     0 = 3
-     0 = 0
-     0 = 1
-     0 = 7
-     0 = 4
-     0 = 5
-
-     1 = 12 = width*(height-1) + ((1%4) + (x))
-     1 = 13 = width*(height-1) + ((1%4) + (x))
-     1 = 14 = width*(height-1) + ((1%4) + (x))
-
-     3 = 14 = width*(height-1) + ((3%4) + (x))
-     3 = 15 = width*(height-1) + ((3%4) + (x))
-     3 = 12 = width*(height-1) + ((3%4) + (x))
-
-     7 = 2
-     7 = 3
-     7 = 0 = 7-width
-
-     3 = 14 = 3 + (width * 3)      - 1
-     3 = 15 = 3 + (width * 3)      + 0
-     3 = 12 = 15 - 3 
-
-      5 = 0, 1, 2, 4, 6, 8, 9, 10
-      mod = -5, -4, -3, -1, 1, 3, 4, 5
-
-      5+(((4*-1)-1)*-1), 5+((4-0)*-1), 5-((4+1)*-1)
-      5+(((4* 0)-1)*0), 5+1,
-      5+(((4* 1)-1)*1), 5+((4-0)*1), 5-((4+1)*1)
-    */
-
     /**
      * Return the bit value for cells at n.
      */
@@ -513,43 +447,7 @@ CGOL.Block.prototype = {
     setNeighbour : function(x,y,neighbour)
     {
         this.neighbours[x+':'+y] = neighbour;
-    },
-
-/*
-
-      0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
-      
-      7 = 2, 3, 6, 10, 11
-
-      7-(4+1), 7-4, 
-      7-1, 
-      7+(4-1), 7+4
-
-      5 = 0, 1, 2, 4, 6, 8, 9, 10
-
-      5-(4+1), 5-4, 5-(4-1)
-      5-1, 5+1,
-      5+(4-1), 5+4, 5+(4+1)
-
-    [ 0, 1, 2, 3
-      4, 5, 6, 7
-      8, 9, 10,11
-      12,13,14,15 ]
-
-    [ 0,0, 1,0, 2,0, 3,0,
-      0,1, 1,1, 2,1, 3,1,
-      0,2, 1,2, 2,2, 3,2,
-      0,3, 1,3, 2,3, 3,3 ]
-
-    [ (x+1) * (y+1) -1 ]
-
-    [ 1*1-1=0, 2*1-1=1, 
-               2*2-1
-               w*y + x = 4*2 + 2 = 10
-    
-    
-                                 4*4-1=15
-*/
+    }
 };
 
 CGOL.View = {
