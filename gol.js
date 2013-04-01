@@ -1,4 +1,7 @@
 
+/**
+ * Game of Life controller.
+ */
 CGOL = function()
 {
     this.blocks = {};
@@ -11,17 +14,21 @@ CGOL.prototype = {
     blocks : null,
     blockWidth : 4,
     blockHeight : 4,
-    nextStep : 0,
+    currentStep : 0,
 
+    /**
+     * Reset the board to it's starting state.
+     */
     reset : function()
     {
         this.blocks = {};
+        this.currentStep = 0;
     },
     
     /**
-     * Return the block key for given cells at x,y
+     * Return the block key for given cell at x,y.
      */
-    getBlockKey : function(x, y)
+    getCellBlockKey : function(x, y)
     {
         return Math.floor(x/this.blockWidth)+':'+Math.floor(y/this.blockHeight);
     },
@@ -29,50 +36,71 @@ CGOL.prototype = {
     /**
      * Return the block that contains the given cells at x,y.
      */
-    getBlock : function(x,y)
+    getCellBlock : function(x,y)
     {
         // Normalise x,y to block's key.
-        var blockKey = this.getBlockKey(x, y);
+        var blockKey = this.getCellBlockKey(x, y);
+
         if (undefined===this.blocks[blockKey]) {
-            // Not yet set up, so create it.
-            this.blocks[blockKey] = new CGOL.Block(
-                this.blockWidth,
-                this.blockHeight
-            );
-            // Set up neighbour relationship.
-            this.setBlockNeighbours(blockKey, this.blocks[blockKey]);
+            this.initBlock(blockKey);
         }
         return this.blocks[blockKey];
     },
 
     /**
+     * Initialise the block at the given key.
+     */
+    initBlock : function(blockKey)
+    {
+        // Not yet set up, so create it.
+        this.blocks[blockKey] = new CGOL.Block(
+            this.blockWidth,
+            this.blockHeight
+        );
+        this.blocks[blockKey].currentStep = this.currentStep;
+        // Set up neighbour relationship.
+//        this.setBlockNeighbours(blockKey, this.blocks[blockKey]);
+    },
+
+    activateNeighbours : function(blockKey, block)
+    {
+        this.setBlockNeighbours(blockKey, block, true);
+    },
+
+    /**
      * Set the relationship between neighbouring blocks.
      */
-    setBlockNeighbours : function(blockKey, block)
+    setBlockNeighbours : function(blockKey, block, activate)
     {
         var blockXY, x, y, i, j, neighbourX, neighbourY;
         // Get the x,y of the block as ints.
         blockXY = blockKey.split(':');
         x = parseInt(blockXY[0], 10);
         y = parseInt(blockXY[1], 10);
+
+        // For each neighbour (loop 8 neighbours).
         for (i=x-1; i<=x+1; i++) {
             for (j=y-1; j<=y+1; j++) {
                 // Neighbours are identified by their +/- 0/1 offset from the given block.
-                neighbourX = i-x;
-                neighbourY = j-y;
-                if (neighbourX!=0 || neighbourY!=0) {
-                    // 0,0 is no neighbour (it's $block), so skip that.
+                if (i!=0 || j!=0) {
+                    // Set neighbour's XY on the board, relative to this block.
+                    neighbourX = i-x;
+                    neighbourY = j-y;
                     neighbourBlockKey = i + ':' + j;
+                    if (activate && 'undefined' === typeof this.blocks[neighbourBlockKey]) {
+                        // Create a blank neighbour.
+                        this.initBlock(neighbourBlockKey);
+                    }
                     // If the neighbour exists.
                     if ('undefined' !== typeof this.blocks[neighbourBlockKey]) {
                         // Set up the neighbourly relationship between blocks.
-                        this.blocks[blockKey].setNeighbour(neighbourX, neighbourY, this.blocks[neighbourBlockKey]);
+                        block.setNeighbour(neighbourX, neighbourY, this.blocks[neighbourBlockKey]);
                         // Set as reciprical neighbour.
-                        this.blocks[neighbourBlockKey].setNeighbour(-1*(neighbourX), -1*(neighbourY), this.blocks[blockKey]);
+                        this.blocks[neighbourBlockKey].setNeighbour(-1*(neighbourX), -1*(neighbourY), block);
                     }
                     else {
                         // Set the empty neighbour.
-                        this.blocks[blockKey].setNeighbour(i-x, j-y, null);
+                        block.setNeighbour(i-x, j-y, null);
                     }
                 }
             }
@@ -84,19 +112,31 @@ CGOL.prototype = {
      */
     step : function()
     {
-        var k;
+        var k,tmp;
+
+        // Progress.
+        this.currentStep++;
+
         // Step each block.
-        for (var k in this.blocks) {
-            newBlocks = this.blocks[k].step();
-            this.addNewBlocks(k, newBlocks);
+        for (k in this.blocks) {
+            tmp = this.blocks[k].cells;
+            this.blocks[k].step(this.currentStep);
+            if (tmp==0 && this.blocks[k].cells > 0) {
+                // block switched on, tell the neighbours
+                this.activateNeighbours(k, this.blocks[k]);
+            }
         }
-        this.nextStep++;
     },
 
-    addNewBlocks : function(relativeBlockKey, newBlocks)
+    /**
+     * Add newly generated blocks.
+     */
+    addNewBlocks : function(blockKey, newBlocks)
     {
-        var newBlocks, i, blockXY, blockX, blockY, neighbourXY, neighbourX, neighbourY, newBlockKey;
-        blockXY = relativeBlockKey.split(':');
+        var i, blockXY, blockX, blockY, neighbourXY, neighbourX, neighbourY, newBlockKey;
+        
+        // Get x/y of existing block.
+        blockXY = blockKey.split(':');
         blockX = parseInt(blockXY[0], 10);
         blockY = parseInt(blockXY[1], 10);
 
@@ -104,13 +144,16 @@ CGOL.prototype = {
             // The step generated some new blocks, so add them to the board.
             for(i in newBlocks) {
                 if (newBlocks.hasOwnProperty(i)) {
-                    neighbourXY = i.split(':');
-                    neighbourX = blockX + parseInt(neighbourXY[0], 10);
-                    neighbourY = blockY + parseInt(neighbourXY[1], 10);
-                    newBlockKey = neighbourX + ':' + neighbourY;
-                    this.blocks[newBlockKey] = newBlocks[i];
-                    // Set up relationships with board.
-                    this.setBlockNeighbours(newBlockKey, this.blocks[newBlockKey]);
+                    // Only add blocks that have live cells.
+                    if (newBlocks[i].cells > 0) {
+                        neighbourXY = i.split(':');
+                        neighbourX = blockX + parseInt(neighbourXY[0], 10);
+                        neighbourY = blockY + parseInt(neighbourXY[1], 10);
+                        newBlockKey = neighbourX + ':' + neighbourY;
+                        this.blocks[newBlockKey] = newBlocks[i];
+                        // Set up relationships the rest of the board.
+                        this.setBlockNeighbours(newBlockKey, this.blocks[newBlockKey]);
+                    }
                 }
             }
         }
@@ -137,16 +180,22 @@ CGOL.prototype = {
      */
     setCell : function(x, y, val)
     {
-        this.getBlock(x, y).setCell(x, y, val);
+        var blockKey = this.getCellBlockKey(x, y),
+            block = this.getCellBlock(x, y);
+        block.setCell([x, y], val);
+        if (1==val) {
+            // Cell turned on, make sure the neighbours are awake.
+            this.activateNeighbours(blockKey, block);
+        }
     },
 
     /**
-     * Switch on the neighbours of x & y.
+     * Switch on the neighbours of x & y (for testing purposes).
      */
     highlightNeighbours : function(x, y)
     {
-        var newBlocks = this.getBlock(x, y).highlightNeighbours([x, y]);
-        this.addNewBlocks(this.getBlockKey(x,y), newBlocks);
+        this.addNewBlocks(this.getCellBlockKey(x,y), 
+                this.getCellBlock(x, y).highlightNeighbours([x, y]));
     }
 };
 
@@ -163,33 +212,55 @@ CGOL.Block.prototype = {
     height : null,
     cells : null,
     neighbours : null,
-    nextStep : 0, // next step to compute.
+    currentStep : 0, // current step of the board.
     history : null,
 
     /**
      * Step through this block, step is the Nth step through the GOL.
      */
-    step : function()
+    step : function(stepTo)
     {
-        var i,
-            size = (this.width * this.height),
-            cell;
+        while (this.currentStep < stepTo) {
+            // Progress.
+            this.history[this.currentStep] = this.cells;
+            this.currentStep++;
 
-        // Loop & step.
-        for (i=0; i<size; i++) {
-            this.stepCell(i); // step cell at index i.
+            var i,
+                size = (this.width * this.height);
+
+            // Loop & step.
+            for (i=0; i<size; i++) {
+                this.stepCell(i, stepTo);
+            }
         }
-
-        // Progress.
-        this.nextStep++;
     },
 
     /**
-     * Get the nth bit of this cell, and it's 8 neighbouring cells at step.
+     * Step the given cell with it's neighbours (implement GOL rules here).
      */
-    getCell : function(n, step)
+    stepCell : function(n, stepTo)
     {
-        return [this.getCellValue(n, step)].splice(1, 0, this.getCellNeighboursSum(n, step));
+        var step = (stepTo-1),
+            cellValue = this.getCellValue(n, step),
+            cellNeighboursSum = this.getCellNeighboursSum(n, step);
+
+        if (cellValue==1) {
+            // Rule 1: Any live cell with fewer than two live neighbours dies, as if caused by under-population.
+            if (cellNeighboursSum < 2) {
+                this.setCell(n, 0);
+            }
+            // Rule 2: Any live cell with two or three live neighbours lives on to the next generation.
+            // Rule 3: Any live cell with more than three live neighbours dies, as if by overcrowding.
+            else if (cellNeighboursSum > 3) {
+                this.setCell(n, 0);
+            }
+        }
+        else {
+            // Rule 4: Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
+            if (3==cellNeighboursSum) {
+                this.setCell(n, 1);
+            }
+        }
     },
 
     /**
@@ -198,86 +269,11 @@ CGOL.Block.prototype = {
     getCellValue : function(n, step)
     {
         if ('undefined' === typeof step) {
-            step = this.nextStep;
+            step = this.currentStep;
         }
         n = this.normaliseBitPos(n);
         return this.getBitValue(
             this.getCellsString(step), n);
-    },
-
-    highlightNeighbours : function(n)
-    {
-        n = this.normaliseBitPos(n);
-
-        var neighbours = 0,
-            i,j,mod,bitPos,
-            xN,
-            yN,
-            neighbourDir,
-            neighbour,
-            newNeighbours={},
-            modBlock;
-        for (y=-1; y<=1; y++) {
-            for (x=-1; x<=1; x++) {
-                // Skip me.
-                if (x===0 && y===0) {
-                    continue;
-                }
-
-                modBlock = this.getNeighbourBlock(n, [x,y]);
-
-                if (modBlock.block!==this) {
-                    // Will need to save this neighbour.
-                    newNeighbours[modBlock.neighbourKey] = modBlock.block;
-                }
-
-                mod = this.getBitShift(modBlock.block, modBlock.neighbourKey.split(':'), [x,y]);
-
-                // Do the mod.
-                bitPos = (n+mod)%(this.width*this.height);
-                if (bitPos < 0) {
-                    bitPos += (this.width*this.height);
-                }
-                modBlock.block.setCell(bitPos, 1);
-            }
-        }
-
-        return newNeighbours;
-    },
-
-    getNeighbourBlock : function(n, shiftXY)
-    {
-        n = this.normaliseBitPos(n);
-
-        var neighbourDir, xN, yN, neighbour;
-        // Get neighbour direction.
-        neighbourDir = this.getNeighbourDirection(n, shiftXY);
-        xN = neighbourDir[0];
-        yN = neighbourDir[1];
-
-        // Check if it's neighbouring.
-        if (xN != 0 || yN != 0) {
-            // Has neighbour - get it.
-            neighbour = this.getNeighbour(xN, yN);
-            if (!neighbour) {
-                // No neighbour, make a new one.
-                neighbour = new CGOL.Block(
-                    this.width,
-                    this.height
-                );
-                neighbour.setNeighbour(x, y, this);
-                // Save neighbour.
-                this.setNeighbour(xN, yN, neighbour);
-            }
-        }
-        else {
-            neighbour = this;
-        }
-
-        return { 
-            neighbourKey : xN+':'+yN,
-            block : neighbour,
-        };
     },
 
     getBitShift : function(block, neighbourPos, shiftXY)
@@ -310,6 +306,10 @@ CGOL.Block.prototype = {
             neighbour;
         for (y=-1; y<=1; y++) {
             for (x=-1; x<=1; x++) {
+                // Skip me.
+                if (x===0 && y===0) {
+                    continue;
+                }
                 // Get neighbour direction.
                 neighbourDir = this.getNeighbourDirection(n, [x,y]);
                 xN = neighbourDir[0];
@@ -383,7 +383,7 @@ CGOL.Block.prototype = {
      */
     getCellsString : function(step)
     {
-        var cells = (('undefined'===typeof step) || step===this.nextStep) ? this.cells : this.history[step];
+        var cells = (('undefined'===typeof step) || step===this.currentStep) ? this.cells : this.history[step];
         if ('undefined' === typeof cells) {
             // Not current step, and not in history.
             throw 'cells at step not found';
@@ -408,26 +408,15 @@ CGOL.Block.prototype = {
         return binString;
     },
 
-    /**
-     * Step the given cell with it's neighbours (implement GOL rules here).
-     *
-     * Cell is an array of it's value (0,1) and it's neighbours values (length==9).
-     */
-    stepCell : function(cell)
-    {
-        // console.log(cell);
-    },
 
     setCell : function(n, val)
     {
         n = this.normaliseBitPos(n);
 
-        var cells = this.getCellsString(this.nextStep);
+        var cells = this.getCellsString(this.currentStep);
         cells = cells.substring(0, n) + val + cells.substring(n+1);
         this.cells = parseInt(cells, 2);
 
-        // Store the change in history.
-        this.history[this.nextStep] = this.cells;
     },
 
     normaliseBitPos : function(n)
@@ -456,7 +445,7 @@ CGOL.View = {
      */
     render : function(board)
     {
-        var y,x,block,
+        var xy,x,y,block,
             boardDom = document.createElement('div'),
             cellWidth=15,
             cellHeight=15,
@@ -465,18 +454,20 @@ CGOL.View = {
             leftPos,
             topPos
             ;
-        for (y=0; y<5; y++) {
-            for (x=0; x<5; x++) {
-                blockDom = this.renderBlock(board.getBlock(x*board.blockWidth,
-                                                           y*board.blockHeight));
+        for (var k in board.blocks) {
+            if (board.blocks.hasOwnProperty(k)) {
+                blockDom = this.renderBlock(board.blocks[k]);
+                xy = k.split(':');
+                x = parseInt(xy[0], 10);
+                y = parseInt(xy[1], 10);
                 leftPos = x*blockWidth;
                 topPos = y*blockHeight;
 
                 blockDom.style.position = 'absolute';
                 blockDom.style.left = leftPos + 'px';
                 blockDom.style.top = topPos + 'px';
-                blockDom.style.width = (blockWidth-2) + 'px';
-                blockDom.style.height = (blockHeight-2) + 'px';
+                blockDom.style.width = (blockWidth) + 'px';
+                blockDom.style.height = (blockHeight) + 'px';
                 blockDom.style.border = '1px solid blue';
 
                 boardDom.appendChild(blockDom);

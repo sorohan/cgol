@@ -22,15 +22,15 @@ body {
         window.cgol = new CGOL();
 
         // randomise starting position.
-        var startWith = 0,
+        var startWith = 100,
             i
             ;
         for (i=0; i<startWith; i++) {
-            var randX = Math.floor(Math.random()*(10+1))+5;
-            var randY = Math.floor(Math.random()*(10+1))+5;
+            var randX = Math.floor(Math.random()*(20+1))+5;
+            var randY = Math.floor(Math.random()*(20+1))+5;
             var cell = cgol.switchOnCell(randX, randY);
         }
-        cgol.step();
+        cgol.switchOnCell(randX, randY);
         var dom = CGOL.View.render(cgol);
         document.getElementById('board').innerHTML = '';
         document.getElementById('board').appendChild(dom);
@@ -54,6 +54,9 @@ body {
             <input type="button" id="yPlus" value="v" />
         </div>
     </div>
+    <div>
+    <input type="button" value="step" id="step" />
+    </div>
 </div>
 <script>
     var doHighlight = function()
@@ -62,6 +65,13 @@ body {
         var x = document.getElementById('x').value,
             y = document.getElementById('y').value;
         window.cgol.highlightNeighbours(x,y);
+        dom = CGOL.View.render(cgol);
+        document.getElementById('board').innerHTML = '';
+        document.getElementById('board').appendChild(dom);
+    };
+    var doStep = function()
+    {
+        window.cgol.step();
         dom = CGOL.View.render(cgol);
         document.getElementById('board').innerHTML = '';
         document.getElementById('board').appendChild(dom);
@@ -86,7 +96,8 @@ body {
         document.getElementById('y').value = parseInt(document.getElementById('y').value, 10) - 1;
         doHighlight.call();
     };
-    doHighlight.call();
+    document.getElementById('step').onclick = doStep;
+    window.setInterval(doStep, 10);
 </script>
 </body>
 </html>
