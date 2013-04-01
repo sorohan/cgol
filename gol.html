@@ -12,369 +12,86 @@ body {
     overflow:hidden;
 }
 </style>
-<script>
-
-    /**
-     * TODO: 
-     *  - Controls on screen.
-     *  - Kill off cells that are really far away - in case they go walkabout forever.
-     *  - (or) Add ability to wrap around the render container.
-     */
-
-    function init()
-    {
-        // var cgol = new CGOL(document.getElementById('board'));
-        var cgol = new CGOL(document.body);
-        return cgol;
-    }
-
-    CGOL = function(renderTo)
-    {
-        this.renderTo = renderTo;
-
-        this.init();
-    };
-    CGOL.prototype = {
-        board : null,
-
-        // starting vars
-        startWith : 150,
-
-        // viewing vars (zoom/pan)
-        cellSize : 10,
-        viewX : 0,
-        viewY : 0,
-        _speed : 100, // initial speed, in milliseconds
-
-        init : function()
-        {
-            this.board = { };
-            
-            /* test shape
-            this.getCell(25,2).switchOn();
-            this.getCell(25,3).switchOn();
-            this.getCell(25,4).switchOn();
-            this.render();
-            return;
-            */
-
-            for (var i=0; i<this.startWith; i++) {
-                this.randomInit();
-            }
-            this.render();
-            this.start();
-        },
-
-        randomInit : function()
-        {
-            // Cluster to top left.
-            var randX = Math.floor(Math.random()*(30+1))+10;
-            var randY = Math.floor(Math.random()*(30+1))+10;
-            var cell = this.getCell(randX, randY);
-            cell.switchOn();
-        },
-
-        getCell : function(x,y)
-        {
-            if (undefined===this.board[x] || undefined===this.board[x][y]) {
-                if (undefined===this.board[x]) {
-                    this.board[x] = {};
-                }
-                if (undefined===this.board[x][y]) {
-                    var me = this;
-                    this.board[x][y] = new CGOL.Cell(me, x, y);
-                }
-            }
-            return this.board[x][y];
-        },
-
-        start : function()
-        {
-            var cgol = this;
-            this._stepInterval = window.setInterval(function() { cgol.step(); }, cgol._speed);
-        },
-
-        pause : function()
-        {
-            window.clearInterval(this._stepInterval);
-        },
-
-        reset : function()
-        {
-            this.pause();
-            this.destroy();
-            this.init();
-        },
-
-        setSpeed : function(speed)
-        {
-            this._speed = speed;
-            this.pause();
-            this.start();
-        },
-
-        step : function()
-        {
-            // Loop through all the cells in the board && pre-step.
-            var blanksChecked = [];
-            var stepCount = 0;
-            for (var i in this.board) {
-                if (this.board.hasOwnProperty(i)) {
-                    for (j in this.board[i]) {
-                        if (this.board[i].hasOwnProperty(j)) {
-                            var cell = this.getCell(i,j);
-                            cell.prestep();
-                            stepCount++;
-                            if (cell.isOn()) {
-                                // Better check the neighbours.
-                                this._stepNeighbours(cell, blanksChecked);
-                                stepCount++;
-                            }
-                        }
-                    }
-                }
-            }
-            // Do the step to the next gen.
-            for (var i in this.board) {
-                if (this.board.hasOwnProperty(i)) {
-                    for (j in this.board[i]) {
-                        if (this.board[i].hasOwnProperty(j)) {
-                            var cell = this.getCell(i,j);
-                            cell.dostep();
-                        }
-                    }
-                }
-            }
-            // console.log(stepCount);
-            this.render();
-        },
-
-        _stepNeighbours : function(cell, ignore)
-        {
-            for (var i=cell.myX-1; i<=cell.myX+1; i++) {
-                for (var j=cell.myY-1; j<=cell.myY+1; j++) {
-                    if (i!==cell.myX || j!==cell.myY) {
-                        var id = i+','+j;
-                        if (-1===ignore.indexOf(id)) {
-                            var neighbourCell = this.getCell(i,j);
-                            if (!(neighbourCell.isOn())) {
-                                neighbourCell.prestep();
-                            }
-                            ignore.push(id);
-                        }
-                    }
-                }
-            }
-        },
-
-        destroyCell : function(x,y)
-        {
-            if (undefined !== this.board[x] && undefined !== this.board[x][y]) {
-                delete this.board[x][y];
-                var isEmpty = true;
-                for (var i in this.board[x]) {
-                    if (this.board[x].hasOwnProperty(i)) {
-                        isEmpty = false;
-                        break;
-                    }
-                }
-                if (isEmpty) {
-                    delete this.board[x];
-                }
-            }
-        },
-
-        render : function()
-        {
-            this.width =  Math.ceil(this.renderTo.scrollWidth/this.cellSize);
-            this.height = Math.ceil(this.renderTo.scrollHeight/this.cellSize);
-            
-            for (var i=this.viewX; i<(this.viewX+this.width); i++) {
-                for (var j=this.viewY; j<this.height; j++) {
-                    var cell = this.getCell(i,j);
-                    var renderDiv = cell.render();
-                    if (renderDiv) {
-                        this.renderTo.appendChild(renderDiv);
-                    }
-                }
-            }
-        },
-
-        zoom : function(zoomBy)
-        {
-            this.cellSize += zoomBy;
-        },
-
-        panX : function(panBy)
-        {
-            this.viewX += panBy;
-        },
-
-        panY : function(panBy)
-        {
-            this.viewY += panBy;
-        },
-
-        destroy : function()
-        {
-            // Loop through all the cells in the board and kill them.
-            for (var i in this.board) {
-                if (this.board.hasOwnProperty(i)) {
-                    for (j in this.board[i]) {
-                        if (this.board[i].hasOwnProperty(j)) {
-                            var cell = this.getCell(i,j);
-                            cell.destroy();
-                        }
-                    }
-                }
-            }
-        }
-    };
-
-    CGOL.Cell = function(game, myX, myY, isOn)
-    {
-        this.game = game;
-        this.myX = myX;
-        this.myY = myY;
-        this._isOn = (isOn!==undefined && isOn) ? true : false;
-        this._wasOn = null; // store last generation.
-        this._div = null;
-    };
-    CGOL.Cell.prototype = {
-
-        isOn : function()
-        {
-            return this._isOn;
-        },
-
-        wasOn : function()
-        {
-            return this._wasOn;
-        },
-
-        switchOn : function()
-        {
-            this._isOn = true;
-        },
-
-        switchOff : function()
-        {
-            this._isOn = false;
-            this.destroy();
-        },
-
-        destroy : function()
-        {
-            if (undefined!==this._div && null!==this._div) {
-                this._div.parentNode.removeChild(this._div);
-            }
-            this.game.destroyCell(this.myX, this.myY);
-        },
-
-        numNeighbours : function()
-        {
-            var numNeighbours = 0;
-            for (var i=this.myX-1; i<=this.myX+1; i++) {
-                for (var j=this.myY-1; j<=this.myY+1; j++) {
-                    if (i!==this.myX || j!==this.myY) {
-                        var neighbour = this.game.getCell(i,j);
-                        if (neighbour.isOn()) {
-                            numNeighbours++;
-                        }
-                    }
-                }
-            }
-            return numNeighbours;
-        },
-
-        prestep : function()
-        {
-            var numNeighbours = this.numNeighbours();
-            var toLive = false;
-            if (this._isOn && (numNeighbours < 2)) {
-                toLive = false;
-            }
-            else if (this._isOn && (numNeighbours === 2 || numNeighbours === 3)) {
-                toLive = true;
-            }
-            else if (this._isOn && (numNeighbours > 3)) {
-                toLive = false;
-            }
-            else if (!this._isOn && (numNeighbours === 3)) {
-                toLive = true;
-            }
-            this._preStepIsOn = toLive;
-        },
-
-        dostep : function()
-        {
-            this._wasOn = this._isOn;
-            if (this._preStepIsOn) {
-                this.switchOn();
-            }
-            else {
-                this.switchOff();
-            }
-        },
-
-        render : function()
-        {
-            if (!this._isOn) {
-                this.destroy();
-                return;
-            }
-
-            if (undefined===this._div || null===this._div) {
-                this._div = document.createElement('div');
-            }
-            var div = this._div;
-            div.style.width =  (this.game.cellSize-2) + 'px';
-            div.style.height = (this.game.cellSize-2) + 'px';
-            if (this.isOn()) {
-                div.style.border = '1px solid #d2e2ff';
-                div.style.backgroundColor = '#e3edff';
-            }
-            else {
-                div.style.border = '1px solid #eee';
-                div.style.backgroundColor = '#fff';
-            }
-            div.style.position="absolute";
-            div.style.margin="0px";
-            div.style.padding="0px";
-            div.style.left = (this.myX-this.game.viewX) * this.game.cellSize;
-            div.style.top = (this.myY-this.game.viewY) * this.game.cellSize;
-            // div.innerHTML = this.myX+','+this.myY;
-            return div;
-        }
-    };
-
-    if (!Array.prototype.indexOf) {
-        Array.prototype.indexOf = function(elt /*, from*/)
-        {
-            var len = this.length >>> 0;
-
-            var from = Number(arguments[1]) || 0;
-            from = (from < 0)
-                 ? Math.ceil(from)
-                 : Math.floor(from);
-            if (from < 0)
-              from += len;
-
-            for (; from < len; from++) {
-                if (from in this &&
-                        this[from] === elt)
-                return from;
-            }
-            return -1;
-        };
-    }
-</script>
 </head>
 <body>
 <div id="board"></div>
-
+<script src="gol.js"></script>
 <script>
-    cgol = init();
+    (function()
+    {
+        window.cgol = new CGOL();
+
+        // randomise starting position.
+        var startWith = 0,
+            i
+            ;
+        for (i=0; i<startWith; i++) {
+            var randX = Math.floor(Math.random()*(10+1))+5;
+            var randY = Math.floor(Math.random()*(10+1))+5;
+            var cell = cgol.switchOnCell(randX, randY);
+        }
+        cgol.step();
+        var dom = CGOL.View.render(cgol);
+        document.getElementById('board').innerHTML = '';
+        document.getElementById('board').appendChild(dom);
+    })();
+</script>
+<!-- test controls -->
+<div style="position:absolute; right:20px; top:20px;">
+x: <input type="text" id="x" value="5" />
+        <input type="button" id="xPlus" value="+">
+        <input type="button" id="xMin" value="-">
+<br/>
+y: <input type="text" id="y" value="5" />
+        <input type="button" id="yPlus" value="+">
+        <input type="button" id="yMin" value="-">
+<br/>
+<br/>
+<textarea id="mod" style="width:400px; height:200px;">
+if (neighbour==false) {
+    mod = (y*w) + x;
+}
+else {
+    mod = ((-1*x) + y) * w + x
+    // mod = (1+y) * w + x;
+}
+</textarea>
+<br/>
+<input type="button" value="RUN" id="run" />
+</div>
+<script>
+    var doHighlight = function()
+    {
+        window.cgol.reset();
+        var x = document.getElementById('x').value,
+            y = document.getElementById('y').value;
+        window.cgol.highlightNeighbours(x,y);
+        dom = CGOL.View.render(cgol);
+        document.getElementById('board').innerHTML = '';
+        document.getElementById('board').appendChild(dom);
+    };
+    document.getElementById('run').onclick = doHighlight;
+    document.getElementById('xPlus').onclick = function()
+    {
+        document.getElementById('x').value = parseInt(document.getElementById('x').value, 10) + 1;
+        doHighlight.call();
+    };
+    document.getElementById('xMin').onclick = function()
+    {
+        document.getElementById('x').value = parseInt(document.getElementById('x').value, 10) - 1;
+        doHighlight.call();
+    };
+    document.getElementById('yPlus').onclick = function()
+    {
+        document.getElementById('y').value = parseInt(document.getElementById('y').value, 10) + 1;
+        doHighlight.call();
+    };
+    document.getElementById('yMin').onclick = function()
+    {
+        document.getElementById('y').value = parseInt(document.getElementById('y').value, 10) - 1;
+        doHighlight.call();
+    };
+    doHighlight.call();
 </script>
 </body>
 </html>
