@@ -12,8 +12,8 @@ CGOL.prototype = {
      * The blocks are 4x4 (16 bits) in size, and identified by the x:y position on the board.
      */
     blocks : null,
-    blockWidth : 4,
-    blockHeight : 4,
+    blockWidth : 2,
+    blockHeight : 2,
     currentStep : 0,
 
     /**
@@ -283,15 +283,24 @@ CGOL.Block.prototype = {
             this.history[this.currentStep] = this.cells;
             this.currentStep++;
 
-            size = (this.width * this.height);
+            // Check cache.
+            if (!this.stepCache(stepTo)) {
 
-            // Loop & step.
-            for (i=0; i<size; i++) {
-                this.stepCell(i, stepTo);
+                size = (this.width * this.height);
+
+                // Loop & step.
+                for (i=0; i<size; i++) {
+                    this.stepCell(i, stepTo);
+                }
             }
         }
 
         this.gc();
+    },
+
+    stepCache : function()
+    {
+        return false;
     },
 
     /**
