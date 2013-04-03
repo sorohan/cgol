@@ -38,66 +38,29 @@ body {
 </script>
 <!-- test controls -->
 <div style="position:absolute; right:20px; top:20px; border:1px solid blue;">
-    <input type="hidden" id="x" value="5" />
-    <input type="hidden" id="y" value="5" />
-    <div style="text-align:center;">
-        <div style="margin:auto; display:inline;">
-            <input type="button" id="yMin" value="^">
-        </div>
-    </div>
-    <div>
-        <input type="button" id="xMin" value="<">
-        <input type="button" id="xPlus" value=">">
-    </div>
-    <div style="text-align:center;">
-        <div style="margin:auto; display:inline;">
-            <input type="button" id="yPlus" value="v" />
-        </div>
-    </div>
-    <div>
-    <input type="button" value="step" id="step" />
-    </div>
+    <div id="speed"></div>
 </div>
 <script>
-    var doHighlight = function()
-    {
-        window.cgol.reset();
-        var x = document.getElementById('x').value,
-            y = document.getElementById('y').value;
-        window.cgol.highlightNeighbours(x,y);
-        dom = CGOL.View.render(cgol);
-        document.getElementById('board').innerHTML = '';
-        document.getElementById('board').appendChild(dom);
-    };
     var doStep = function()
     {
+        if (!window.start) {
+            window.start = new Date().getTime();
+        }
         window.cgol.step();
         dom = CGOL.View.render(cgol);
         document.getElementById('board').innerHTML = '';
         document.getElementById('board').appendChild(dom);
+
+        if (window.cgol.currentStep % 10 === 0) {
+            // Update speed.
+            var end = new Date();
+            speed = Math.round(10 / ((end-start)/1000)); // steps per second
+            window.start = end;
+
+            document.getElementById('speed').innerHTML = speed + ' steps per second';
+        }
     };
-    document.getElementById('xPlus').onclick = function()
-    {
-        document.getElementById('x').value = parseInt(document.getElementById('x').value, 10) + 1;
-        doHighlight.call();
-    };
-    document.getElementById('xMin').onclick = function()
-    {
-        document.getElementById('x').value = parseInt(document.getElementById('x').value, 10) - 1;
-        doHighlight.call();
-    };
-    document.getElementById('yPlus').onclick = function()
-    {
-        document.getElementById('y').value = parseInt(document.getElementById('y').value, 10) + 1;
-        doHighlight.call();
-    };
-    document.getElementById('yMin').onclick = function()
-    {
-        document.getElementById('y').value = parseInt(document.getElementById('y').value, 10) - 1;
-        doHighlight.call();
-    };
-    document.getElementById('step').onclick = doStep;
-    window.setInterval(doStep, 100);
+    window.setInterval(doStep, 1);
 </script>
 </body>
 </html>
