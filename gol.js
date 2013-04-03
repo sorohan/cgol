@@ -291,6 +291,34 @@ CGOL.Block.prototype = {
         return mod;
     },
 
+    getNeighbourBlock : function(n, shiftXY)
+    {
+        n = this.normaliseBitPos(n);
+
+        var neighbourDir, xN, yN, neighbour;
+        // Get neighbour direction.
+        neighbourDir = this.getNeighbourDirection(n, shiftXY);
+        xN = neighbourDir[0];
+        yN = neighbourDir[1];
+
+        // Check if it's neighbouring.
+        if (xN != 0 || yN != 0) {
+            // Has neighbour - get it.
+            neighbour = this.getNeighbour(xN, yN);
+            if (!neighbour) {
+                return false;
+            }
+        }
+        else {
+            neighbour = this;
+        }
+
+        return { 
+            neighbourKey : xN+':'+yN,
+            block : neighbour,
+        };
+    },
+
     /**
      * Get the sum of neighbour values for the nth bit.
      */
@@ -310,29 +338,21 @@ CGOL.Block.prototype = {
                 if (x===0 && y===0) {
                     continue;
                 }
-                // Get neighbour direction.
-                neighbourDir = this.getNeighbourDirection(n, [x,y]);
-                xN = neighbourDir[0];
-                yN = neighbourDir[1];
 
-                if (xN != 0 || yN != 0) {
-                    // Has neighbour.
-                    neighbour = this.getNeighbour(xN, yN);
-                    if (neighbour) {
-                        mod = ((-1*x) + y) * this.width + x
-                        bitPos = (n+mod)%(this.width*this.height);
-                        if (bitPos < 0) {
-                            bitPos += (this.width*this.height);
-                        }
-                        neighbours += neighbour.getCellValue(bitPos, step);
-                    }
+                modBlock = this.getNeighbourBlock(n, [x,y]);
+                if (!modBlock) {
+                    // Neighbour doesn't matter.
+                    continue;
                 }
-                else {
-                    // Easy - all neighbours are on this block.
-                    mod = (this.width*y)+(x);
-                    bitPos = n+mod;
-                    neighbours += this.getCellValue(bitPos, step);
+
+                mod = this.getBitShift(modBlock.block, modBlock.neighbourKey.split(':'), [x,y]);
+
+                // Do the mod.
+                bitPos = (n+mod)%(this.width*this.height);
+                if (bitPos < 0) {
+                    bitPos += (this.width*this.height);
                 }
+                neighbours += modBlock.block.getCellValue(bitPos, step);
             }
         }
         return neighbours;
