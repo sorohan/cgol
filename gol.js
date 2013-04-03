@@ -436,6 +436,12 @@ CGOL.Block.prototype = {
     setNeighbour : function(x,y,neighbour)
     {
         this.neighbours[x+':'+y] = neighbour;
+    },
+
+    hasChanged : function()
+    {
+        return ('undefined' == typeof this.history[(this.currentStep-1)]) || 
+                (this.cells != this.history[(this.currentStep-1)]);
     }
 };
 
@@ -454,9 +460,14 @@ CGOL.View = {
             leftPos,
             topPos
             ;
+        // Init board cache.
+        if (!board.domCache) {
+            board.domCache = { cached : [] };
+        }
         for (var k in board.blocks) {
             if (board.blocks.hasOwnProperty(k)) {
-                blockDom = this.renderBlock(board.blocks[k]);
+                blockDom = this.renderBlock(board, board.blocks[k]);
+
                 xy = k.split(':');
                 x = parseInt(xy[0], 10);
                 y = parseInt(xy[1], 10);
@@ -479,8 +490,21 @@ CGOL.View = {
     /**
      * Return a dom for the block.
      */
-    renderBlock : function(block)
+    renderBlock : function(board, block)
     {
+        // Check if has changed.
+        if (block.dom && !block.hasChanged()) {
+            // Re-use dom from last step.
+            return block.dom;
+        }
+
+        // Check render cache.
+        if ('undefined' !== typeof board.domCache[block.cells]) {
+            // Cached dom.
+            block.dom = board.domCache[block.cells].cloneNode(true);
+            return block.dom;
+        }
+
         var blockDom = document.createElement('div'),
             x,y,
             cellWidth = Math.round(100/block.width),
@@ -502,6 +526,12 @@ CGOL.View = {
                 blockDom.appendChild(cellDom);
             }
         }
+
+        // Cache render (todo GC cache).
+        block.dom = blockDom;
+        board.domCache[block.cells] = blockDom.cloneNode(true);
+        board.domCache.cached.push(block.cells);
+
         return blockDom;
     },
 
