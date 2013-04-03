@@ -57,7 +57,7 @@ CGOL.prototype = {
             this.blockWidth,
             this.blockHeight
         );
-        this.blocks[blockKey].currentStep = this.currentStep;
+        this.blocks[blockKey].currentStep = (this.currentStep);
         // Set up neighbour relationship.
 //        this.setBlockNeighbours(blockKey, this.blocks[blockKey]);
     },
@@ -113,6 +113,8 @@ CGOL.prototype = {
     step : function()
     {
         var k,tmp;
+
+        this.gc();
 
         // Progress.
         this.currentStep++;
@@ -196,6 +198,58 @@ CGOL.prototype = {
     {
         this.addNewBlocks(this.getCellBlockKey(x,y), 
                 this.getCellBlock(x, y).highlightNeighbours([x, y]));
+    },
+
+    gc : function()
+    {
+        for (k in this.blocks) {
+            if (this.blocks.hasOwnProperty(k)) {
+                if (this.blocks[k].cells==0) {
+                    hasNeighbourWithCell = false;
+                    for (i in this.blocks[k].neighbours) {
+                        if (this.blocks[k].neighbours.hasOwnProperty(i)) {
+                            if (this.blocks[k].neighbours[i].cells != 0) {
+                                hasNeighbourWithCell = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (!hasNeighbourWithCell) {
+                        this.destroyBlock(k);
+                    }
+                }
+            }
+        }
+    },
+
+    destroyBlock : function(blockKey)
+    {
+        var block = this.blocks[blockKey],
+            blockXY,
+            x, y, i, j, 
+            neighbourX, neighbourY, neighbourBlockKey, mykey;
+
+        // delete from neighbours
+        blockXY = blockKey.split(':');
+        x = parseInt(blockXY[0], 10);
+        y = parseInt(blockXY[1], 10);
+
+        // For each neighbour (loop 8 neighbours).
+        for (i=x-1; i<=x+1; i++) {
+            for (j=y-1; j<=y+1; j++) {
+                // Neighbours are identified by their +/- 0/1 offset from the given block.
+                if (i!=0 || j!=0) {
+                    neighbourX = i-x;
+                    neighbourY = j-y;
+                    neighbourBlockKey = i + ':' + j;
+                    if (this.blocks[neighbourBlockKey]) {
+                        mykey = (-1*neighbourX) + ':' + (-1*neighbourY);
+                        delete this.blocks[neighbourBlockKey].neighbours[mykey];
+                    }
+                }
+            }
+        }
+        delete this.blocks[blockKey];
     }
 };
 
@@ -204,7 +258,8 @@ CGOL.Block = function(width, height) {
     this.height = height;
     this.cells = 0;
     this.neighbours = {};
-    this.history = [];
+    this.history = {};
+    this.historyStart = 0;
 };
 
 CGOL.Block.prototype = {
@@ -214,25 +269,29 @@ CGOL.Block.prototype = {
     neighbours : null,
     currentStep : 0, // current step of the board.
     history : null,
+    historyStart : 0,
 
     /**
      * Step through this block, step is the Nth step through the GOL.
      */
     step : function(stepTo)
     {
+        var i, size;
+
         while (this.currentStep < stepTo) {
             // Progress.
             this.history[this.currentStep] = this.cells;
             this.currentStep++;
 
-            var i,
-                size = (this.width * this.height);
+            size = (this.width * this.height);
 
             // Loop & step.
             for (i=0; i<size; i++) {
                 this.stepCell(i, stepTo);
             }
         }
+
+        this.gc();
     },
 
     /**
@@ -462,6 +521,18 @@ CGOL.Block.prototype = {
     {
         return ('undefined' == typeof this.history[(this.currentStep-1)]) || 
                 (this.cells != this.history[(this.currentStep-1)]);
+    },
+
+    gc : function()
+    {
+        var historyLength, i;
+        historyLength = this.currentStep - this.historyStart;
+        if (historyLength > 20) {
+            for (i=0; i<10; i++) {
+                delete this.history[i];
+            }
+            this.historyStart = i;
+        }
     }
 };
 
@@ -499,7 +570,7 @@ CGOL.View = {
                 blockDom.style.top = topPos + 'px';
                 blockDom.style.width = (blockWidth) + 'px';
                 blockDom.style.height = (blockHeight) + 'px';
-                blockDom.style.border = '1px solid blue';
+//                blockDom.style.border = '1px solid blue';
 
                 boardDom.appendChild(blockDom);
             }
@@ -547,7 +618,8 @@ CGOL.View = {
             }
         }
 
-        // Cache render (todo GC cache).
+        // Cache render.
+        this.gc(board);
         block.dom = blockDom;
         board.domCache[block.cells] = blockDom.cloneNode(true);
         board.domCache.cached.push(block.cells);
@@ -566,5 +638,22 @@ CGOL.View = {
         }
         cellDom.innerHTML = '&nbsp;';
         return cellDom;
+    },
+
+    gc : function(board)
+    {
+        var killFrom, killNum, kill, i;
+//        console.log(board.domCache.cached.length);
+        if (board.domCache.cached.length > 100) {
+            killFrom = Math.round(board.domCache.cached.length/2);
+            killNum  = board.domCache.cached.length-killFrom;
+            kill = board.domCache.cached.splice(killFrom, killNum);
+            for (i=0; i<kill.length; i++) {
+                if (board.domCache.cached[i] != 0) {
+//                    console.log('gc: ' + board.domCache.cached[i]);
+                    delete board.domCache[board.domCache.cached[i]];
+                }
+            }
+        }
     }
 };
