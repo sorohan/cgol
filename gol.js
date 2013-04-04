@@ -5,6 +5,8 @@
 CGOL = function()
 {
     this.blocks = {};
+    this.transitionPatterns = {};
+    this.transitionPatternKeys = [];
 };
 
 CGOL.prototype = {
@@ -12,9 +14,12 @@ CGOL.prototype = {
      * The blocks are 4x4 (16 bits) in size, and identified by the x:y position on the board.
      */
     blocks : null,
-    blockWidth : 2,
-    blockHeight : 2,
+    transitionPatterns : null,
+    transitionPatternKeys : null,
     currentStep : 0,
+
+    blockWidth : 1,
+    blockHeight : 1,
 
     /**
      * Reset the board to it's starting state.
@@ -112,7 +117,7 @@ CGOL.prototype = {
      */
     step : function()
     {
-        var k,tmp;
+        var k,cells,tmp;
 
         this.gc();
 
@@ -121,13 +126,35 @@ CGOL.prototype = {
 
         // Step each block.
         for (k in this.blocks) {
+            // Get neighbours values for transition patterns.
+            neighboursCells = this.blocks[k].getNeighboursCells(this.currentStep-1);
+
+            // Check cache.
+            cells = this.stepCache(this.blocks[k].cells, neighboursCells);
+
             tmp = this.blocks[k].cells;
-            this.blocks[k].step(this.currentStep);
+            this.blocks[k].step(this.currentStep, cells);
+
             if (tmp==0 && this.blocks[k].cells > 0) {
                 // block switched on, tell the neighbours
                 this.activateNeighbours(k, this.blocks[k]);
             }
+
+            // Store in cache.
+            if (typeof cells !== 'undefined') {
+                transitionKey = tmp + '-' + neighboursCells;
+                this.transitionPatterns[transitionKey] = this.blocks[k].cells;
+            }
         }
+    },
+
+    stepCache : function(cells, neighboursCells)
+    {
+        var transitionKey = cells + '-' + neighboursCells;
+        if (undefined != this.transitionPatterns[transitionKey]) {
+            return this.transitionPatterns[transitionKey];
+        }
+        return false;
     },
 
     /**
@@ -274,33 +301,51 @@ CGOL.Block.prototype = {
     /**
      * Step through this block, step is the Nth step through the GOL.
      */
-    step : function(stepTo)
+    step : function(stepTo, cells)
     {
         var i, size;
 
-        while (this.currentStep < stepTo) {
-            // Progress.
-            this.history[this.currentStep] = this.cells;
-            this.currentStep++;
+        // Store in history.
+        this.history[this.currentStep] = this.cells;
 
-            // Check cache.
-            if (!this.stepCache(stepTo)) {
+        // Progress.
+        this.currentStep++;
 
-                size = (this.width * this.height);
+        if (typeof cells === 'undefined' || false === cells) {
 
-                // Loop & step.
-                for (i=0; i<size; i++) {
-                    this.stepCell(i, stepTo);
-                }
+            size = (this.width * this.height);
+
+            // Loop & step.
+            for (i=0; i<size; i++) {
+                this.stepCell(i, this.currentStep);
             }
+
+        }
+        else {
+            this.cells = cells;
         }
 
         this.gc();
     },
 
-    stepCache : function()
+
+    getNeighboursCells : function(step)
     {
-        return false;
+        var neighbourCells = '', neighbour;
+        for (y=-1; y<=1; y++) {
+            for (x=-1; x<=1; x++) {
+                // Skip me.
+                if (x===0 && y===0) {
+                    continue;
+                }
+                neighbour = this.getNeighbour(x, y);
+                neighbourCells += (neighbour) ? neighbour.getCellsValue(step) : 0;
+                if (x !==1 || y!==1) {
+                    neighbourCells += ',';
+                }
+            }
+        }
+        return neighbourCells;
     },
 
     /**
@@ -471,12 +516,18 @@ CGOL.Block.prototype = {
      */
     getCellsString : function(step)
     {
+        var cells = this.getCellsValue(step);
+        return this.padBinary(cells.toString(2));
+    },
+
+    getCellsValue : function(step)
+    {
         var cells = (('undefined'===typeof step) || step===this.currentStep) ? this.cells : this.history[step];
         if ('undefined' === typeof cells) {
             // Not current step, and not in history.
             throw 'cells at step not found';
         }
-        return this.padBinary(cells.toString(2));
+        return cells;
     },
 
     /**
