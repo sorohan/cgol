@@ -8,8 +8,9 @@
     left:10px;
     top:10px;
 }
-body {
-    overflow:hidden;
+.cell.on {
+    border:1px solid #d2e2ff;
+    background-color:#e3edff;
 }
 </style>
 </head>
@@ -60,7 +61,7 @@ body {
             document.getElementById('speed').innerHTML = speed + ' steps per second';
         }
     };
-    window.setInterval(doStep, 10);
+    window.setInterval(doStep, 50);
 </script>
 </body>
 </html>

@@ -604,8 +604,8 @@ CGOL.View = {
     {
         var xy,x,y,block,
             boardDom = document.createElement('div'),
-            cellWidth=15,
-            cellHeight=15,
+            cellWidth=10,
+            cellHeight=10,
             blockWidth=(cellWidth*board.blockWidth),
             blockHeight=(cellHeight*board.blockHeight),
             leftPos,
@@ -666,7 +666,7 @@ CGOL.View = {
                 leftPos = (0===x) ? 0 : Math.round(x/block.width*100);
                 topPos = (0===y) ? 0 : Math.round(y/block.height*100);
                 cellDom = this.renderCell(block.getCellValue([x,y]));
-                cellDom.innerHTML = (block.width * y) + x;
+//                cellDom.innerHTML = (block.width * y) + x;
 
                 cellDom.style.position = 'absolute';
                 cellDom.style.left = leftPos + '%';
@@ -692,10 +692,13 @@ CGOL.View = {
      */
     renderCell : function(cell)
     {
-        var cellDom = document.createElement('div');
+        var cellDom = document.createElement('div'),
+            className = 'cell';
         if (1==cell) {
-            cellDom.style.backgroundColor = 'red';
+            className += ' on';
         }
+        cellDom.setAttribute('className', className);
+        cellDom.setAttribute('class', className);
         cellDom.innerHTML = '&nbsp;';
         return cellDom;
     },
