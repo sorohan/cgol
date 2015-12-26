@@ -77,13 +77,6 @@ describe('A Game Board', function() {
 
         it('Steps a blinking node forward', function() {
             var result = boardUtils.stepNode(mock.boardTreeBlink1Big);
-
-            console.log(boardUtils.renderTree(mock.boardTreeBlink1Big));
-            console.log('=======================');
-            console.log(boardUtils.renderTree(result));
-            console.log('=======================');
-            console.log(boardUtils.renderTree(mock.boardTreeBlink2));
-
             expect(result).to.deep.equal(mock.boardTreeBlink2);
         });
     });
