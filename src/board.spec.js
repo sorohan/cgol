@@ -62,10 +62,10 @@ describe('A Game Board', function() {
 
         it('Steps a blinking node forward', function() {
             var result = boardUtils.stepNode(mock.boardTreeBlink1);
-            expect(result).to.deep.equal({nw: 0, ne: 1, se:1, sw:0, level: 1});
+            expect(result).to.deep.equal({nw: 1, ne: 1, se:0, sw:0, level: 1});
 
             result = boardUtils.stepNode(mock.boardTreeBlink2);
-            expect(result).to.deep.equal({nw: 1, ne: 1, se:0, sw:0, level: 1});
+            expect(result).to.deep.equal({nw: 0, ne: 1, se:1, sw:0, level: 1});
         });
     });
 
@@ -75,12 +75,16 @@ describe('A Game Board', function() {
             expect(result).to.deep.equal(mock.boardTreeLoaf);
         });
 
-        xit('Steps a blinking node forward', function() {
-            var result = boardUtils.stepNode(mock.boardTreeBlink1);
-            expect(result).to.deep.equal({nw: 0, ne: 1, se:1, sw:0, level: 1});
+        it('Steps a blinking node forward', function() {
+            var result = boardUtils.stepNode(mock.boardTreeBlink1Big);
 
-            result = boardUtils.stepNode(mock.boardTreeBlink2);
-            expect(result).to.deep.equal({nw: 1, ne: 1, se:0, sw:0, level: 1});
+            console.log(boardUtils.renderTree(mock.boardTreeBlink1Big));
+            console.log('=======================');
+            console.log(boardUtils.renderTree(result));
+            console.log('=======================');
+            console.log(boardUtils.renderTree(mock.boardTreeBlink2));
+
+            expect(result).to.deep.equal(mock.boardTreeBlink2);
         });
     });
 });

@@ -13,29 +13,38 @@ var boardArrLoaf = [
 var boardArrLoafBig = [
     [ 0, 0, 0, 0, 0, 0, 0, 0 ],
     [ 0, 0, 0, 0, 0, 0, 0, 0 ],
-//          --result--   
     [ 0, 0, 0, 1, 0, 0, 0, 0 ],
     [ 0, 0, 1, 0, 1, 0, 0, 0 ],
     [ 0, 0, 1, 0, 0, 1, 0, 0 ],
     [ 0, 0, 0, 1, 1, 0, 0, 0 ],
-//          ----------
     [ 0, 0, 0, 0, 0, 0, 0, 0 ],
     [ 0, 0, 0, 0, 0, 0, 0, 0 ]
 ];
 
 // blinking board
 var boardArrBlink1 = [
+    [ 0, 0, 1, 0 ],
+    [ 0, 0, 1, 0 ],
+    [ 0, 0, 1, 0 ],
+    [ 0, 0, 0, 0 ]
+];
+
+var boardArrBlink2 = [
     [ 0, 0, 0, 0 ],
     [ 0, 1, 1, 1 ],
     [ 0, 0, 0, 0 ],
     [ 0, 0, 0, 0 ]
 ];
 
-var boardArrBlink2 = [
-    [ 0, 0, 1, 0 ],
-    [ 0, 0, 1, 0 ],
-    [ 0, 0, 1, 0 ],
-    [ 0, 0, 0, 0 ]
+var boardArrBlink1Big = [
+    [ 0, 0, 0, 0, 0, 0, 0, 0 ],
+    [ 0, 0, 0, 0, 0, 0, 0, 0 ],
+    [ 0, 0, 0, 0, 1, 0, 0, 0 ],
+    [ 0, 0, 0, 0, 1, 0, 0, 0 ],
+    [ 0, 0, 0, 0, 1, 0, 0, 0 ],
+    [ 0, 0, 0, 0, 0, 0, 0, 0 ],
+    [ 0, 0, 0, 0, 0, 0, 0, 0 ],
+    [ 0, 0, 0, 0, 0, 0, 0, 0 ]
 ];
 
 // nw ne
@@ -89,6 +98,14 @@ var boardTreeLoafBigCenteredNodes = {
 };
 
 var boardTreeBlink1 = {
+    nw: { nw:0, ne:0, se:0, sw:0, level: 1 },
+    ne: { nw:1, ne:0, se:0, sw:1, level: 1 },
+    se: { nw:1, ne:0, se:0, sw:0, level: 1 },
+    sw: { nw:0, ne:0, se:0, sw:0, level: 1 },
+    level: 2
+};
+
+var boardTreeBlink2 = {
     nw: { nw:0, ne:0, se:1, sw:0, level: 1 },
     ne: { nw:0, ne:0, se:1, sw:1, level: 1 },
     se: { nw:0, ne:0, se:0, sw:0, level: 1 },
@@ -96,12 +113,31 @@ var boardTreeBlink1 = {
     level: 2
 };
 
-var boardTreeBlink2 = {
-    nw: { nw:0, ne:0, se:0, sw:0, level: 1 },
-    ne: { nw:1, ne:0, se:0, sw:1, level: 1 },
-    se: { nw:1, ne:0, se:0, sw:0, level: 1 },
-    sw: { nw:0, ne:0, se:0, sw:0, level: 1 },
-    level: 2
+var boardTreeBlink1Big = { nw:
+   { nw: { nw: 0, ne: 0, se: 0, sw: 0, level: 1 },
+     ne: { nw: 0, ne: 0, se: 0, sw: 0, level: 1 },
+     se: { nw: 0, ne: 0, se: 0, sw: 0, level: 1 },
+     sw: { nw: 0, ne: 0, se: 0, sw: 0, level: 1 },
+     level: 2 },
+  ne:
+   { nw: { nw: 0, ne: 0, se: 0, sw: 0, level: 1 },
+     ne: { nw: 0, ne: 0, se: 0, sw: 0, level: 1 },
+     se: { nw: 0, ne: 0, se: 0, sw: 0, level: 1 },
+     sw: { nw: 1, ne: 0, se: 0, sw: 1, level: 1 },
+     level: 2 },
+  se:
+   { nw: { nw: 1, ne: 0, se: 0, sw: 0, level: 1 },
+     ne: { nw: 0, ne: 0, se: 0, sw: 0, level: 1 },
+     se: { nw: 0, ne: 0, se: 0, sw: 0, level: 1 },
+     sw: { nw: 0, ne: 0, se: 0, sw: 0, level: 1 },
+     level: 2 },
+  sw:
+   { nw: { nw: 0, ne: 0, se: 0, sw: 0, level: 1 },
+     ne: { nw: 0, ne: 0, se: 0, sw: 0, level: 1 },
+     se: { nw: 0, ne: 0, se: 0, sw: 0, level: 1 },
+     sw: { nw: 0, ne: 0, se: 0, sw: 0, level: 1 },
+     level: 2 },
+  level: 3
 };
 
 // var boardTreeBitsLoaf = 0b0100101010010110;
@@ -110,10 +146,12 @@ module.exports = {
     boardArrLoaf,
     boardArrLoafBig,
     boardArrBlink1,
+    boardArrBlink1Big,
     boardArrBlink2,
     boardTreeLoaf,
     boardTreeLoafBig,
     boardTreeLoafBigCenteredNodes,
     boardTreeBlink1,
+    boardTreeBlink1Big,
     boardTreeBlink2
 };
