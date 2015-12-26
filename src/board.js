@@ -230,11 +230,74 @@ var centeredVerticalSubnode = function(north, south) {
     };
 };
 
+var newBorder = function(level) {
+    if (level < 1) {
+        throw new Error('Can\'t make a border less than 2 level');
+    }
+    else if (level == 1) {
+        return { nw: 0, ne: 0, se: 0, sw: 0, level: level };
+    }
+    else {
+        return {
+            nw: newBorder(level-1),
+            ne: newBorder(level-1),
+            se: newBorder(level-1),
+            sw: newBorder(level-1),
+            level: level
+        };
+    }
+};
+
+
+//               _ _ _ _ _ _ _ _
+// x x x x       _ _ _ _ _ _ _ _
+// x x x x  -->  _ _ x x x x _ _
+// x x x x       _ _ x x x x _ _
+// x x x x       _ _ x x x x _ _
+//               _ _ _ _ _ _ _ _
+//               _ _ _ _ _ _ _ _
+var expandNode = function(node) {
+    var border = newBorder(node.level - 1);
+
+    return {
+        nw: {
+            nw: border,
+            ne: border,
+            se: node.nw,
+            sw: border,
+            level: node.level
+        },
+        ne: {
+            nw: border,
+            ne: border,
+            se: border,
+            sw: node.ne,
+            level: node.level
+        },
+        se: {
+            nw: node.se,
+            ne: border,
+            se: border,
+            sw: border,
+            level: node.level
+        },
+        sw: {
+            nw: border,
+            ne: node.sw,
+            se: border,
+            sw: border,
+            level: node.level
+        },
+        level: node.level + 1
+    };
+};
+
 module.exports = {
     stepNode,
     renderTree,
     renderArray,
     treeToArray,
     arrayToTree,
-    centeredSubnodes
+    centeredSubnodes,
+    expandNode
 };

@@ -51,6 +51,15 @@ describe('Utils', function() {
         });
         
     });
+
+    describe('Expanding', function() {
+        describe('Given a 4 x 4 board', function() {
+            it('expands to a 8 x 8 board', function() {
+                var expanded = boardUtils.expandNode(mock.boardTreeLoaf);
+                expect(expanded).to.deep.equal(mock.boardTreeLoafBig);
+            });
+        });
+    });
 });
 
 describe('A Game Board', function() {
