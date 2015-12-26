@@ -1,0 +1,36 @@
+{
+  "name": "conways-game-of-life",
+  "version": "1.0.0-alpha.0",
+  "description": "Conway's game of life.",
+  "main": "index.js",
+  "scripts": {
+    "start": "mocha --watch $(find src -name '*.spec.js')",
+    "test": "./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha -- --ui bdd -R spec -t 5000",
+    "coveralls": "cat ./coverage/lcov.info | ./node_modules/.bin/coveralls"
+  },
+  "author": "Ben Sorohan <npm@sorohan.com.au>",
+  "license": "MIT",
+  "dependencies": {
+    "lodash": "^3.10.0"
+  },
+  "devDependencies": {
+    "chai": "^3.4.1",
+    "coveralls": "^2.11.3",
+    "istanbul": "^0.3.17",
+    "mocha": "^2.2.5",
+    "sinon": "^1.15.4"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sorohan/cgol.git"
+  },
+  "keywords": [
+    "conway",
+    "game",
+    "life"
+  ],
+  "bugs": {
+    "url": "https://github.com/sorohan/cgol/issues"
+  },
+  "homepage": "https://github.com/sorohan/cgol"
+}
