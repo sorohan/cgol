@@ -9,3 +9,7 @@ Conway's Game of Life, written in javascript using HashLife algorithm.
 ## Performance
 
 Current speed for 32 x 32 size board: ~225 generations per second.
+
+## Old Script
+
+For my older implementation see gol.html and gol.js
