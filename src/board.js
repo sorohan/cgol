@@ -4,6 +4,9 @@ var cellUtils = require('./cell');
 var cellValue = cellUtils.cellValue;
 var cellStep = cellUtils.cellStep;
 
+var RENDER_LIVE = '.';
+var RENDER_DEAD = ' ';
+
 var stepNode = function(node) {
     var nw, ne, se, sw, level;
 
@@ -57,14 +60,14 @@ var stepNode = function(node) {
         var subnodes = centeredSubnodes(node);
         return {
             nw: stepNode({ nw:subnodes.tl, ne:subnodes.tc,
-                           se:subnodes.cc, sw:subnodes.cl, level: 2 }),
+                           se:subnodes.cc, sw:subnodes.cl, level: node.level-1 }),
             ne: stepNode({ nw:subnodes.tc, ne:subnodes.tr,
-                           se:subnodes.cr, sw:subnodes.cc, level: 2 }),
+                           se:subnodes.cr, sw:subnodes.cc, level: node.level-1 }),
             se: stepNode({ nw:subnodes.cc, ne:subnodes.cr,
-                           se:subnodes.br, sw:subnodes.bc, level: 2 }),
+                           se:subnodes.br, sw:subnodes.bc, level: node.level-1 }),
             sw: stepNode({ nw:subnodes.cl, ne:subnodes.cc,
-                           se:subnodes.bc, sw:subnodes.bl, level: 2 }),
-            level: 2
+                           se:subnodes.bc, sw:subnodes.bl, level: node.level-1 }),
+            level: node.level - 1
         };
     }
 };
@@ -153,7 +156,7 @@ var boardTreeObjLoaf = {
 
 var renderArray = function(board) {
     return board.map(function(line) {
-        return line.map(point => point ? ' x ' : ' _ ').join('')
+        return line.map(point => point ? ` ${RENDER_LIVE} ` : ' ' + RENDER_DEAD + ' ').join('')
     }).join('\n');
 };
 
