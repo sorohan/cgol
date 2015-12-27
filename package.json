@@ -4,11 +4,12 @@
   "description": "Conway's game of life.",
   "main": "index.js",
   "scripts": {
-    "play": "mocha src/game.spec.js",
+    "play": "./bin/cgol.js",
     "start": "mocha --watch $(find src -name '*.spec.js')",
     "test": "./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha -- --ui bdd -R spec -t 5000",
     "coveralls": "cat ./coverage/lcov.info | ./node_modules/.bin/coveralls"
   },
+  "bin": { "cgol": "./bin/cgol.js" },
   "author": "Ben Sorohan <npm@sorohan.com.au>",
   "license": "MIT",
   "dependencies": {

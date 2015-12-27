@@ -4,7 +4,7 @@ var cellUtils = require('./cell');
 var cellValue = cellUtils.cellValue;
 var cellStep = cellUtils.cellStep;
 
-var RENDER_LIVE = '.';
+var RENDER_LIVE = String.fromCharCode(0x0000265E);
 var RENDER_DEAD = ' ';
 
 var stepNode = function(node) {
