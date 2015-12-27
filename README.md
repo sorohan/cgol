@@ -2,6 +2,9 @@
 
 Conway's Game of Life, written in javascript using HashLife algorithm.
 
+[![Coverage
+Status](https://coveralls.io/repos/sorohan/cgol/badge.svg?branch=master&service=github)](https://coveralls.io/github/sorohan/cgol?branch=master)
+
 ## Play
 
 `npm i && npm run play`
